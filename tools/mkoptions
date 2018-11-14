@@ -1,0 +1,50 @@
+#!/bin/bash
+#set -x
+rfc=rfc2132.txt
+rfcurl="https://tools.ietf.org/rfc/rfc2132.txt"
+set -i i=0
+set -i l=0
+oldifs="$IFS"
+set -i iop
+for ((i=0; i<256; i++)); do
+      cmts[$i]="UNKNOWN"
+      lens[$i]="-1"
+      fields[$i]=""
+done
+
+((i=0))
+
+# wget -q -O ${rfc} ${rfcurl}
+readarray -t text < <(cat ${rfc} | sed '/^$/d'| grep --no-group-separator -B1  -A 3 "^[[:space:]]*Code" )
+num=${#text[@]}
+for ((i=0; i<num; i++)); do
+    line="${text[$i]}"
+    (( l=i%5 ))
+    
+    #echo $i :$l :  "$line"
+    (( l == 0 )) && comment="$line";
+    (( l == 1 )) && hdr="$line";
+    (( l == 3 )) && values="$line";
+
+    if (( l == 4 )); then
+	#echo "got an option:"
+	#echo "comment: $comment"
+	#echo "hdr: $hdr"
+	#echo "values: $values"
+	values=${values#*|}
+	op=${values%%|*}
+	values=${values#*|}
+	len=${values%%|*}
+	rest=${values#*|}
+	[[ -z ${len} ]] && len=1
+	(( iop = op ))
+	cmts[$iop]="$comment"
+	lens[$iop]="$len"
+	fields[$iop]="$rest"
+	echo "iop: $iop comment:${cmts[$iop]} len:${lens[$iop]} fields:${fields[$iop]}"      
+    fi
+done
+
+for ((i=0; i<256; i++)); do
+    echo "op:$i :  comment:${cmts[$i]} len:${lens[$i]} fields:${fields[$i]}"
+done
