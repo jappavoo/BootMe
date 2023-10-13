@@ -1,0 +1,21 @@
+You will need to setup a bridge and give it a static IP address first.
+# ip link add name virbr0 type bridge
+# ip addess add 192.168.111.1/24 dev virbr0
+# ip link set dev virbr0 up
+
+Next, create a tap device and add it to the bridge
+# ip tuntap add dev tap0 mode tap user `whoami`
+# ip link set tap0 master virbr0
+
+Then you need to create a vm that is setup to netboot (note that this vm has no disk).
+
+qemu-system-x86_64 \
+-machine pc-q35-6.2 \
+-accel kvm \
+-cpu host,migratable=on \
+-m 512 \
+-serial stdio \
+-smp 1 \
+-device pcie-root-port,port=16,chassis=1,id=pci.1,bus=pcie.0,multifunction=on,addr=0x2 \
+-netdev tap,ifname=tap0,id=hostnet0 \
+-device virtio-net-pci,netdev=hostnet0,id=net0,mac=52:54:00:82:c1:3a,bus=pci.1,addr=0x0,bootindex=1
