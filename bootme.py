@@ -57,6 +57,7 @@ def main():
         tftp_target = '{}/ukl'.format(tftp_root)
         pxe_root = '{}/pxelinux.cfg'.format(tftp_root)
         os.makedirs(pxe_root, exist_ok=True)
+        os.mkdir(tftp_target)
 
         shutil.copyfile('{}/pxelinux.0'.format(args.pxe_src), '{}/pxelinux.0'.format(tftp_root))
         shutil.copyfile('{}/menu.c32'.format(args.pxe_src), '{}/menu.c32'.format(tftp_root))
