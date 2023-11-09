@@ -54,6 +54,7 @@ def main():
     with tempfile.TemporaryDirectory() as bootd:
         # Copy pxe files in?
         tftp_root = '{}/tftp'.format(bootd)
+        tftp_target = '{}/ukl'.format(tftp_root)
         pxe_root = '{}/pxelinux.cfg'.format(tftp_root)
         os.makedirs(pxe_root, exist_ok=True)
 
@@ -70,6 +71,7 @@ def main():
                 print("'{}' is not a well formed host description, mac address and kernel are required".format(entry))
                 sys.exit(1)
             mac,kern,*rest = entry.split(SEP)
+            shutils.copyfile(kern, '{}/'.format(tftp_target))
 
             cmdline = None
             initrd = None
@@ -77,6 +79,7 @@ def main():
                 cmdline = rest[0]
             if len(rest) >= 2:
                 initrd = rest[1]
+                shutils.copyfile(initrd, '{}/'.format(tftp_target))
 
             dnsmasq_args.append('--dhcp-host={},host{},{}.{}'.format(mac, str(count), args.dhcp_net, str(100 + count)))
             count += 1
