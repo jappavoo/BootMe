@@ -93,9 +93,9 @@ label ukl
 menu default
 kernel {}
 
-{} {} {}""".format(kern,
+{} {} {}""".format(os.path.basename(kern),
                     'append' if initrd is not None and cmdline is not None else '',
-                    'initrd={}'.format(initrd) if initrd is not None else '',
+                    'initrd={}'.format(os.path.basename(initrd)) if initrd is not None else '',
                     cmdline if cmdline is not None else '')
 
             pxe_conf_file = '{}/01-{}'.format(pxe_root, mac.replace(':','-'))
