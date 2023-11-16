@@ -25,6 +25,7 @@ def main():
     parser.add_argument('--dnsmasq-exe', type=str, help='/path/to/dnsmasq to use instead of relying on $PATH')
     parser.add_argument('--dhcp-net', type=str, default='172.16.1', help='The first three octets of a C class network to use for dhcp')
     parser.add_argument('--pxe-src', type=str, default='./pxebin', help='/path/to/pxebin where we can find pxelinux.0 and menu.c32')
+    parser.add_argument('--tftp-target', type=str, default='ukl', help='The target name and subdirectory for TFTP')
     parser.add_argument('host', type=str, nargs='+', help='An entry to be added to boot a host in the form of "mac_addr{sep}path/to/kernel{sep}kernelCmdLine{sep}path/to/initrd" where the kernel command line and initrd path are optional'.format(sep=SEP))
 
     args = parser.parse_args()
@@ -54,7 +55,7 @@ def main():
     with tempfile.TemporaryDirectory() as bootd:
         # Copy pxe files in?
         tftp_root = '{}/tftp'.format(bootd)
-        tftp_target = '{}/ukl'.format(tftp_root)
+        tftp_target = '{}/{}'.format(tftp_root, args.tftp_target)
         pxe_root = '{}/pxelinux.cfg'.format(tftp_root)
         os.makedirs(pxe_root, exist_ok=True)
         os.mkdir(tftp_target)
@@ -72,7 +73,7 @@ def main():
                 print("'{}' is not a well formed host description, mac address and kernel are required".format(entry))
                 sys.exit(1)
             mac,kern,*rest = entry.split(SEP)
-            shutils.copyfile(kern, '{}/'.format(tftp_target))
+            shutil.copyfile(kern, '{}/{}'.format(tftp_target, os.path.basename(kern)))
 
             cmdline = None
             initrd = None
@@ -80,7 +81,7 @@ def main():
                 cmdline = rest[0]
             if len(rest) >= 2:
                 initrd = rest[1]
-                shutils.copyfile(initrd, '{}/'.format(tftp_target))
+                shutil.copyfile(initrd, '{}/{}'.format(tftp_target, os.path.basename(initrd)))
 
             dnsmasq_args.append('--dhcp-host={},host{},{}.{}'.format(mac, str(count), args.dhcp_net, str(100 + count)))
             count += 1
@@ -89,14 +90,14 @@ def main():
 prompt 0
 timeout 1
 
-label ukl
+label {target}
 menu default
-kernel {}
+kernel {target}/{kern}
 
-{} {} {}""".format(os.path.basename(kern),
-                    'append' if initrd is not None and cmdline is not None else '',
-                    'initrd={}'.format(os.path.basename(initrd)) if initrd is not None else '',
-                    cmdline if cmdline is not None else '')
+{append} {init} {cmd}""".format(target=args.tftp_target, kern=os.path.basename(kern),
+                    append='append' if initrd is not None and cmdline is not None else '',
+                    init='initrd={}/{}'.format(args.tftp_target, os.path.basename(initrd)) if initrd is not None else '',
+                    cmd=cmdline if cmdline is not None else '')
 
             pxe_conf_file = '{}/01-{}'.format(pxe_root, mac.replace(':','-'))
             with open(pxe_conf_file, mode='w') as fd:
