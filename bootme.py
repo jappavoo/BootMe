@@ -15,7 +15,7 @@ def check_file(afile):
     try:
         os.stat(afile)
     except:
-        print("Failed to find required file: {}, please use --pxe-src to specify a source directory")
+        print("Failed to find required file: {}, please use --pxe-src to specify a source directory".format(afile))
         sys.exit(1)
 
 
